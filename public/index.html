@@ -1,13 +1,84 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
     <meta charset="UTF-8" />
-    <title>JSDev</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous"
+    />
   </head>
-  <body>
-    <h1>Alright. You're set.</h1>
-    <h2>Now build something amazing.</h2>
-    <button type="button">Click Me!</button>
+
+  <body class="bg-light">
+    <div class="row">
+      <div class="card-group">
+        <div class="card m-2 shadow">
+          <div class="card-body" id="years">
+            <h5 class="card-title">
+              Delivieries By Year
+              <span
+                ><a
+                  class="reset"
+                  style="display: none"
+                  href="javascript: rowChartYr.filterAll(); dc.redrawAll();"
+                  >reset</a
+                ></span
+              >
+            </h5>
+          </div>
+        </div>
+        <div class="card m-2 shadow">
+          <div class="card-body" id="months">
+            <h5 class="card-title">
+              Deliveries by Month
+              <span
+                ><a
+                  class="reset"
+                  style="display: none"
+                  href="javascript: barChartMon.filterAll(); dc.redrawAll();"
+                  >reset</a
+                ></span
+              >
+            </h5>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="card-group">
+        <div class="card m-2 col-3 shadow">
+          <div class="card-body" id="onTimePieChart">
+            <h5 class="card-title">
+              On Time Deliveries
+              <span
+                ><a
+                  class="reset"
+                  style="display: none"
+                  href="javascript: custPieChart.filterAll(); dc.redrawAll();"
+                  >reset</a
+                ></span
+              >
+            </h5>
+          </div>
+        </div>
+        <div class="card m-2 shadow">
+          <div class="card-body" id="onTimeChart">
+            <h5 class="card-title">
+              Estimates
+              <span
+                ><a
+                  class="reset"
+                  style="display: none"
+                  href="javascript: custPieChart.filterAll(); dc.redrawAll();"
+                  >reset</a
+                ></span
+              >
+            </h5>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script src="index.js"></script>
   </body>
