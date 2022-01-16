@@ -35,13 +35,16 @@ function print_filter(filter) {
         .replace("]", "\n]")
   );
 }
-
+function isValidDate(d) {
+  return d instanceof Date && !isNaN(d);
+}
 window.loadChart = (arr) => {
   var data = JSON.parse(arr);
-  console.log(data);
   var chartHeightOne = 300;
   var chartHeightTwo = 400;
   var monthNameFormat = d3.timeFormat("%b");
+  var dateFormat = d3.timeFormat("%Y-%m-%d");
+  var monthYear = d3.timeFormat("%b %Y");
   var yearFormat = d3.timeFormat("%Y");
   var monthFormat = d3.timeFormat("%m");
   var monYrFormat = d3.timeFormat("%Y %m");
@@ -62,9 +65,10 @@ window.loadChart = (arr) => {
     };
   }
   data.forEach(function (d) {
-    const theDate = d.fieldData.ProofApprovalDate;
+    const theDate = d.fieldData.ShippedDate;
     const tempDate = new Date(theDate);
-    console.log(tempDate);
+
+    d.date = tempDate;
     d.month = monthFormat(tempDate);
     d.monthName = monthNameFormat(tempDate);
     d.monYr = monYrFormat(tempDate);
@@ -74,7 +78,8 @@ window.loadChart = (arr) => {
       ? "On Time"
       : d.fieldData.OnTime === 0
       ? "Late"
-      : "In Production";
+      : "Fred";
+    d.onTime = d.IsOnTime === "On Time";
   });
 
   var facts = crossfilter(data);
@@ -83,8 +88,6 @@ window.loadChart = (arr) => {
       ++i.OnTime;
     } else if (d.IsOnTime === "Late") {
       ++i.Late;
-    } else {
-      ++i.InProduction;
     }
     return i;
   }
@@ -93,8 +96,6 @@ window.loadChart = (arr) => {
       --i["On Time"];
     } else if (d.IsOnTime === "Late") {
       --i["Late"];
-    } else {
-      --i.InProduction;
     }
     return i;
   }
@@ -103,10 +104,18 @@ window.loadChart = (arr) => {
     return {
       Late: 0,
       OnTime: 0,
-      InProduction: 0,
     };
   }
+
+  //         lastDate = d3.max(facts, function(x) { return x['End Date']; });
   var clipPadding = 30;
+  var dateDimension = facts.dimension(function (d) {
+    return d.date;
+  });
+  var dateGroup = dateDimension.group().reduceSum(function (d) {
+    return d.fieldData.LeadTime;
+  });
+  print_filter(dateGroup);
   var monthYearDim = facts.dimension(function (d) {
     return d.year + " " + d.monthName;
   });
@@ -116,7 +125,7 @@ window.loadChart = (arr) => {
   });
   var yearGroup = yearDimension.group();
   var yearDimensionStatus = facts.dimension(function (d) {
-    return d.year;
+    return d.month;
   });
   var yearGroupStatus = yearDimensionStatus.group();
   var monthDimension = facts.dimension(function (d) {
@@ -145,7 +154,21 @@ window.loadChart = (arr) => {
   var onTimeCompChart = dc.compositeChart("#onTimeChart");
   var onTimeCompChartLate = dc.lineChart(onTimeCompChart);
   var onTimeCompChartOnTime = dc.lineChart(onTimeCompChart);
+  const overTime = dc.lineChart("#overTime");
 
+  overTime
+    // .width(1300)
+    .height(500)
+    .dimension(dateDimension)
+    .group(dateGroup)
+    .x(d3.scaleTime().domain([new Date(2019, 0, 1), new Date(2021, 12, 31)]))
+    .xUnits(d3.timeMonths)
+    .renderHorizontalGridLines(true)
+    .renderVerticalGridLines(true)
+    .brushOn(false)
+    .yAxisLabel("Lead Time (Days)")
+    .xAxisLabel("Date")
+    .legend(dc.legend().x(80).y(20).itemHeight(13).gap(5));
   onTimeCompChartOnTime
     .colors(currentColor)
     .group(onTimeGroupOverTime, "On Time")
