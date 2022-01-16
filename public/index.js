@@ -40,16 +40,19 @@ function isValidDate(d) {
 }
 window.loadChart = (arr) => {
   var data = JSON.parse(arr);
+  console.log(data);
   var chartHeightOne = 300;
   var chartHeightTwo = 400;
   var monthNameFormat = d3.timeFormat("%b");
   var dateFormat = d3.timeFormat("%Y-%m-%d");
-  var monthYear = d3.timeFormat("%b %Y");
+  var percentFormat = d3.format(".0%");
+  var monthYear = d3.timeFormat("%b %y");
   var yearFormat = d3.timeFormat("%Y");
   var monthFormat = d3.timeFormat("%m");
   var monYrFormat = d3.timeFormat("%Y %m");
   var dayFormat = d3.timeFormat("%d");
   var dollarFormat = d3.format("$,.2f");
+  var decimalFormat = d3.format(".2f");
   var today = new Date();
   var yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
@@ -65,198 +68,194 @@ window.loadChart = (arr) => {
     };
   }
   data.forEach(function (d) {
-    const theDate = d.fieldData.ShippedDate;
+    const theDate = d.fieldData.Date;
     const tempDate = new Date(theDate);
 
     d.date = tempDate;
+    console.log(d.date);
     d.month = monthFormat(tempDate);
     d.monthName = monthNameFormat(tempDate);
     d.monYr = monYrFormat(tempDate);
     d.day = dayFormat(tempDate);
     d.year = yearFormat(tempDate);
-    d.IsOnTime = d.fieldData.OnTime
-      ? "On Time"
-      : d.fieldData.OnTime === 0
-      ? "Late"
-      : "Fred";
-    d.onTime = d.IsOnTime === "On Time";
   });
 
   var facts = crossfilter(data);
-  function onTimeAdd(i, d) {
-    if (d.IsOnTime === "On Time") {
-      ++i.OnTime;
-    } else if (d.IsOnTime === "Late") {
-      ++i.Late;
-    }
-    return i;
-  }
-  function onTimeRemove(i, d) {
-    if (d.IsOnTime === "On Time") {
-      --i["On Time"];
-    } else if (d.IsOnTime === "Late") {
-      --i["Late"];
-    }
-    return i;
-  }
-
-  function onTimeInitial(i, d) {
-    return {
-      Late: 0,
-      OnTime: 0,
-    };
-  }
 
   //         lastDate = d3.max(facts, function(x) { return x['End Date']; });
   var clipPadding = 30;
   var dateDimension = facts.dimension(function (d) {
     return d.date;
   });
-  var dateGroup = dateDimension.group().reduceSum(function (d) {
-    return d.fieldData.LeadTime;
+  var dateTotalGroup = dateDimension.group().reduceSum(function (d) {
+    return d.fieldData.Total;
   });
-  print_filter(dateGroup);
-  var monthYearDim = facts.dimension(function (d) {
-    return d.year + " " + d.monthName;
+  var dateOnTimeGroup = dateDimension.group().reduceSum(function (d) {
+    return d.fieldData.TotalOnTime;
   });
-  var monthYearGroup = monthYearDim.group();
-  var yearDimension = facts.dimension(function (d) {
-    return d.year;
+  var dateLateGroup = dateDimension.group().reduceSum(function (d) {
+    return d.fieldData.TotalLate;
   });
-  var yearGroup = yearDimension.group();
-  var yearDimensionStatus = facts.dimension(function (d) {
-    return d.month;
-  });
-  var yearGroupStatus = yearDimensionStatus.group();
-  var monthDimension = facts.dimension(function (d) {
-    return d.month;
+  const datePercentGroup = dateDimension.group().reduceSum(function (d) {
+    return (d.fieldData.TotalOnTime / d.fieldData.Total) * 100;
   });
 
-  var monthDimension = facts.dimension(function (d) {
-    return d.month;
-  });
-  var monthGroup = monthDimension.group();
-  const onTimeGroupOverTime = yearDimensionStatus
-    .group()
-    .reduce(onTimeAdd, onTimeRemove, onTimeInitial);
-  const onTimeDim = facts.dimension(function (d) {
-    return d.IsOnTime;
-  });
-  const onTimeGroup = onTimeDim.group();
-
-  var estimateDim = facts.dimension(function (d) {
-    return d.fieldData.Estimate;
-  });
-
+  print_filter(datePercentGroup);
   var currentColor = "orange";
   var previousColor = "green";
-  var estimateGroup = filterEstimates(estimateDim.group());
-  var onTimeCompChart = dc.compositeChart("#onTimeChart");
-  var onTimeCompChartLate = dc.lineChart(onTimeCompChart);
-  var onTimeCompChartOnTime = dc.lineChart(onTimeCompChart);
-  const overTime = dc.lineChart("#overTime");
+  // var estimateGroup = filterEstimates(estimateDim.group());
+  var deliveriesOverTime = dc.compositeChart("#deliveriesOverTime");
+  var onTimeCompChartLate = dc.lineChart(deliveriesOverTime);
+  var onTimeCompChartOnTime = dc.lineChart(deliveriesOverTime);
+  var onTimeCompChartPercent = dc.lineChart("#percentChart");
+  // const overTime = dc.lineChart("#overTime");
 
-  overTime
-    // .width(1300)
-    .height(500)
-    .dimension(dateDimension)
-    .group(dateGroup)
-    .x(d3.scaleTime().domain([new Date(2019, 0, 1), new Date(2021, 12, 31)]))
-    .xUnits(d3.timeMonths)
-    .renderHorizontalGridLines(true)
-    .renderVerticalGridLines(true)
-    .brushOn(false)
-    .yAxisLabel("Lead Time (Days)")
-    .xAxisLabel("Date")
-    .legend(dc.legend().x(80).y(20).itemHeight(13).gap(5));
+  // overTime
+  //   // .width(1300)
+  //   .height(500)
+  //   .dimension(dateDimension)
+  //   .group(dateGroup)
+  //   .x(d3.scaleTime().domain([new Date(2019, 0, 1), new Date(2021, 12, 31)]))
+  //   .xUnits(d3.timeMonths)
+  //   .renderHorizontalGridLines(true)
+  //   .renderVerticalGridLines(true)
+  //   .brushOn(false)
+  //   .yAxisLabel("Lead Time (Days)")
+  //   .xAxisLabel("Date")
+  //   .legend(dc.legend().x(80).y(20).itemHeight(13).gap(5));
   onTimeCompChartOnTime
     .colors(currentColor)
-    .group(onTimeGroupOverTime, "On Time")
+    .group(dateOnTimeGroup, "On Time")
+    .title(function (d) {
+      return monthYear(d.key) + " " + d.value;
+    })
+
     .curve(d3.curveMonotoneX)
-    .renderLabel(false)
-    .valueAccessor(function (d) {
-      return d.value.OnTime;
-    });
+    .renderLabel(false);
 
   onTimeCompChartLate
     .colors(previousColor)
     .curve(d3.curveMonotoneX)
     .renderLabel(false)
-    .group(onTimeGroupOverTime, "Late")
-    .valueAccessor(function (d) {
-      return d.value.Late;
-    });
+    .title(function (d) {
+      return monthYear(d.key) + " " + d.value;
+    })
 
-  onTimeCompChart
-    .height(350)
+    .group(dateLateGroup, "Late");
+
+  onTimeCompChartPercent
+    .colors("red")
+    .curve(d3.curveMonotoneX)
+    // .labels(true)
+    .label(function (d) {
+      return d.value;
+    })
+    .renderLabel(false)
+    .title(function (d) {
+      return monthYear(d.key) + " " + d3.format(".0f")(d.value) + "%";
+    })
+    .yAxisLabel("Percentage")
+    .height(300)
     .renderHorizontalGridLines(true)
     .renderVerticalGridLines(true)
-    .x(d3.scaleOrdinal())
-    .xUnits(dc.units.ordinal)
+    .x(d3.scaleTime())
+    .xUnits(d3.timeWeeks)
+    // .legend(dc.legend().x(50).y(20).itemHeight(20).gap(5).horizontal(true))
+    .dimension(dateDimension)
+    .elasticX(true)
+    .brushOn(false)
+
+    .elasticY(true)
+    ._rangeBandPadding(1)
+    .group(datePercentGroup, "Percent On Time");
+
+  deliveriesOverTime
+    .yAxisLabel("Totals")
+    .height(300)
+    .renderHorizontalGridLines(true)
+    .renderVerticalGridLines(true)
+    .x(d3.scaleTime())
+    .xUnits(d3.timeWeeks)
     .legend(dc.legend().x(50).y(20).itemHeight(20).gap(5).horizontal(true))
-    .dimension(yearDimensionStatus)
-    .group(yearGroupStatus)
+    .dimension(dateDimension)
+    .group(dateTotalGroup)
     .elasticX(true)
     .elasticY(true)
     ._rangeBandPadding(1)
-    .renderlet(function (chart) {
-      // rotate x-axis labels
-      chart
-        .selectAll("g.x text")
-        .attr("transform", "translate(-10,10) rotate(315)");
-    })
+    // .renderlet(function (chart) {
+    //   // rotate x-axis labels
+    //   chart
+    //     .selectAll("g.x text")
+    //     .attr("transform", "translate(-10,10) rotate(315)");
+    // })
     .brushOn(false)
-    .title(function (d) {
-      var obj = "On Time: " + d.value.OnTime + "\n" + "Late: " + d.value.Late;
-      return obj;
-    })
+    // .title(function (d) {
+    //   var obj = monthYear(d.key) + " " + d.value;
+    //   return obj;
+    // })
+    .shareTitle(false)
     .compose([onTimeCompChartOnTime, onTimeCompChartLate]);
 
   //Disc Type Dimension
-  var onTimePieChart = dc
-    .pieChart("#onTimePieChart")
-    .height(350)
-    .dimension(onTimeDim)
-    .label(function (d) {
-      return d.key + ": " + d.value;
+  // var onTimePieChart = dc
+  //   .pieChart("#onTimePieChart")
+  //   .height(350)
+  //   .dimension(onTimeDim)
+  //   .label(function (d) {
+  //     return d.key + ": " + d.value;
+  //   })
+  //   .group(onTimeGroup);
+
+  // //Year Dimension
+  // var barChartYear = dc
+  //   .barChart("#years")
+  //   .height(chartHeightOne)
+  //   .dimension(yearDimension)
+  //   .group(yearGroup)
+  //   .renderLabel(true)
+  //   .x(d3.scaleBand())
+  //   .xUnits(dc.units.ordinal)
+  //   .renderLabel(true)
+  //   .renderHorizontalGridLines(true)
+  //   .elasticY(true)
+  //   .title(function (d) {
+  //     return d.key + " " + d.value;
+  //   });
+
+  // //Month Dimension
+  // var barChartMon = dc
+  //   .barChart("#months")
+  //   .height(chartHeightOne)
+  //   .dimension(monthDimension)
+  //   .group(monthGroup)
+  //   .x(d3.scaleBand())
+  //   .xUnits(dc.units.ordinal)
+  //   .renderLabel(true)
+  //   .renderHorizontalGridLines(true)
+  //   .elasticY(true)
+  //   .clipPadding(100)
+  //   .colorAccessor(function (d, i) {
+  //     return i;
+  //   })
+  //   .elasticX(true);
+  onTimeCompChartPercent.xAxis().tickFormat(function (d) {
+    return monthYear(d);
+  });
+
+  onTimeCompChartPercent
+    .yAxis()
+    .tickFormat(function (d) {
+      return percentFormat(d / 100);
     })
-    .group(onTimeGroup);
+    .ticks(d3.timeMonth.every(2));
 
-  //Year Dimension
-  var barChartYear = dc
-    .barChart("#years")
-    .height(chartHeightOne)
-    .dimension(yearDimension)
-    .group(yearGroup)
-    .renderLabel(true)
-    .x(d3.scaleBand())
-    .xUnits(dc.units.ordinal)
-    .renderLabel(true)
-    .renderHorizontalGridLines(true)
-    .elasticY(true)
-    .title(function (d) {
-      return d.key + " " + d.value;
-    });
-
-  //Month Dimension
-  var barChartMon = dc
-    .barChart("#months")
-    .height(chartHeightOne)
-    .dimension(monthDimension)
-    .group(monthGroup)
-    .x(d3.scaleBand())
-    .xUnits(dc.units.ordinal)
-    .renderLabel(true)
-    .renderHorizontalGridLines(true)
-    .elasticY(true)
-    .clipPadding(100)
-    .colorAccessor(function (d, i) {
-      return i;
+  deliveriesOverTime
+    .xAxis()
+    .tickFormat(function (d) {
+      return monthYear(d);
     })
-    .elasticX(true);
+    .ticks(d3.timeMonth.every(1));
 
-  barChartMon.margins().top = 30;
-  barChartYear.margins().top = 30;
   dc.renderAll();
 
   function getFilters() {
