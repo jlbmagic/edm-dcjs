@@ -182,12 +182,12 @@ window.loadChart = (arr) => {
     .elasticX(true)
     .elasticY(true)
     ._rangeBandPadding(1)
-    // .renderlet(function (chart) {
-    //   // rotate x-axis labels
-    //   chart
-    //     .selectAll("g.x text")
-    //     .attr("transform", "translate(-10,10) rotate(315)");
-    // })
+    .renderlet(function (chart) {
+      // rotate x-axis labels
+      chart
+        .selectAll("g.x text")
+        .attr("transform", "translate(-10,10) rotate(315)");
+    })
     .brushOn(false)
     // .title(function (d) {
     //   var obj = monthYear(d.key) + " " + d.value;
@@ -242,12 +242,10 @@ window.loadChart = (arr) => {
     return monthYear(d);
   });
 
-  onTimeCompChartPercent
-    .yAxis()
-    .tickFormat(function (d) {
-      return percentFormat(d / 100);
-    })
-    .ticks(d3.timeMonth.every(2));
+  onTimeCompChartPercent.yAxis().tickFormat(function (d) {
+    return percentFormat(d / 100);
+  });
+  // .ticks(d3.timeMonth.every(2));
 
   deliveriesOverTime
     .xAxis()
